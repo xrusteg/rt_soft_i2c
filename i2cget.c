@@ -44,7 +44,9 @@ int two_byte_address_read(char *bytes, int fd_device, int address);
 static void help(void)
 {
 	fprintf(stderr,
-		"Usage: i2cget [-f] [-y] I2CBUS CHIP-ADDRESS [DATA-ADDRESS [MODE]]\n"
+		"Usage: i2cget [-e] [-f] [-y] I2CBUS CHIP-ADDRESS [DATA-ADDRESS [MODE]]\n"
+		"	 -e read from I2C bus with two byte address\n"
+		"  example: i2cget -e 0x50 0x00 0x01\n"
 		"  I2CBUS is an integer or an I2C bus name\n"
 		"  ADDRESS is an integer (0x03 - 0x77)\n"
 		"  MODE is one of:\n"
@@ -189,7 +191,6 @@ int two_byte_address_read(char *bytes, int fd_device, int address)
 	printf("Value:%x\n", bytes[0]);
 	close(fd_device);
 	exit(1);
-	//return 0;
 }
 
 
