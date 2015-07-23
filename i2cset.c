@@ -228,7 +228,8 @@ int main(int argc, char *argv[])
 		printf("%d\n", val);
 		if (ioctl(file, I2C_SLAVE, address) < 0) {
 			printf("ERROR to open I2C_SLAVE\n");
-			//exit(1);
+			close(file);
+			exit(1);
 		}
 
 		msg[0].addr = address;
@@ -240,7 +241,7 @@ int main(int argc, char *argv[])
 		msg[1].addr = address;
 		msg[1].flags = I2C_M_NOSTART;
 		msg[1].len = 1;
-		msg[1].buf = val;
+		msg[1].buf = &val;
 
 		msgst.msgs = msg;
 		msgst.nmsgs = 2;
