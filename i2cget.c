@@ -39,6 +39,8 @@
 
 static void help(void) __attribute__ ((noreturn));
 
+int two_byte_address_read(char *bytes, int fd_device, int address);
+
 static void help(void)
 {
 	fprintf(stderr,
@@ -151,6 +153,46 @@ static int confirm(const char *filename, int address, int size, int daddress,
 	return 1;
 }
 
+int two_byte_address_read(char *bytes, int fd_device, int address)
+{
+	struct i2c_msg msg[2];
+	struct i2c_ioctl_rdwr_data {
+		struct i2c_msg *msgs;  
+		int nmsgs;           
+	} msgst;
+
+	if (ioctl(fd_device, I2C_SLAVE, address) < 0) {
+		fprintf(stderr, "Error: to open device\n");
+		close(fd_device);
+		exit(2);
+	}
+
+	msg[0].addr = address;
+	msg[0].flags = 0;
+	msg[0].len = 2;
+	msg[0].buf = bytes;
+
+
+	msg[1].addr = address;
+	msg[1].flags = 1;
+	msg[1].len = 1;
+	msg[1].buf = bytes;
+
+	msgst.msgs = msg;
+	msgst.nmsgs = 2;
+	
+	if (ioctl(fd_device, I2C_RDWR, &msgst) < 0) {
+		fprintf(stderr, "Error: to read from device\n");
+		close(fd_device);
+		exit(2);
+	}
+	printf("Value:%x\n", bytes[0]);
+	close(fd_device);
+	exit(1);
+	//return 0;
+}
+
+
 int main(int argc, char *argv[])
 {
 	char *end;
@@ -161,11 +203,6 @@ int main(int argc, char *argv[])
 	int flags = 0;
 	int force = 0, yes = 0, version = 0, extend = 0;
 	char buf[2];// = {0x0,0x1};
-	struct i2c_msg msg[2];
-	struct i2c_ioctl_rdwr_data {
-		struct i2c_msg *msgs;  
-		int nmsgs;           
-	} msgst;
 
 	/* handle (optional) flags first */
 	while (1+flags < argc && argv[1+flags][0] == '-') {
@@ -218,28 +255,7 @@ int main(int argc, char *argv[])
 		file = open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
 		address = parse_i2c_address(argv[flags+2]);
 		
-		if (ioctl(file, I2C_SLAVE, address) < 0) {
-			printf("ERROR to open I2C_SLAVE\n");
-			exit(1);
-		}
-
-		msg[0].addr = address;
-		msg[0].flags = 0;
-		msg[0].len = 2;
-		msg[0].buf = buf;
-
-
-		msg[1].addr = address;
-		msg[1].flags = 1;
-		msg[1].len = 1;
-		msg[1].buf = buf;
-
-		msgst.msgs = msg;
-		msgst.nmsgs = 2;
-	
-		ioctl(file, I2C_RDWR, &msgst);
-		printf("Value:%x\n", buf[0]);
-		exit(1);
+		two_byte_address_read(buf, file, address);
 	}
 
 
